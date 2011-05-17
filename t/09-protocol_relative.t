@@ -1,14 +1,30 @@
 use Test::More;
 use URI;
-use HTML::LinkFilter;
+BEGIN { $ENV{IS_HTML_LINKFILTER_TESTING} = 1; use HTML::LinkFilter }
 
 my $host = "example.com";
 
 my @cases = (
-    [ [ qq{<a href="//$host/foo/bar">} ], q{<a href="/foo/bar">} ],
-    [ [ qq{<a href="//$host/foo/bar">}, q{foo}, q{</a>} ], q{<a href="/foo/bar">foo</a>} ],
-    [ [ qq{<link href="//$host/css/styles.css" media="screen" rel="stylesheet" type="text/css" />} ], q{<link href="/css/styles.css" rel="stylesheet" type="text/css" media="screen" />} ],
-    [ [ qq{<link href="//$host/css/member.css" media="screen" rel="stylesheet" type="text/css" />} ], q{<link href="/css/member.css" rel="stylesheet" type="text/css" media="screen" />} ],
+    [ <<"WISH", <<'HTML' ],
+<a href="//$host/foo/bar">
+WISH
+<a href="/foo/bar">
+HTML
+    [ <<"WISH", <<'HTML' ],
+<a href="//$host/foo/bar">foo</a>
+WISH
+<a href="/foo/bar">foo</a>
+HTML
+    [ <<"WISH", <<'HTML' ],
+<link href="//$host/css/styles.css" media="screen" rel="stylesheet" type="text/css" />
+WISH
+<link href="/css/styles.css" rel="stylesheet" type="text/css" media="screen" />
+HTML
+    [ <<"WISH", <<'HTML' ],
+<link href="//$host/css/member.css" media="screen" rel="stylesheet" type="text/css" />
+WISH
+<link href="/css/member.css" rel="stylesheet" type="text/css" media="screen" />
+HTML
 );
 
 plan tests => scalar @cases;
@@ -31,7 +47,7 @@ foreach my $case_ref ( @cases ) {
     my( $wish, $html ) = @{ $case_ref };
 
     $filter->change( $html, $callback_sub );
-    is_deeply( $filter->tags, $wish );
+    is( $filter->html, $wish );
 }
 
 

@@ -4,11 +4,10 @@ use Test::LongString;
 use Encode qw( encode_utf8 );
 use URI;
 use Mojolicious::Renderer;
-use HTML::LinkFilter;
+BEGIN { $ENV{IS_HTML_LINKFILTER_TESTING} = 1; use HTML::LinkFilter }
 
 my $r = Mojolicious::Renderer->new;
 my( $wish, $html ) = map { $r->get_inline_template( { }, $_ ) } qw( wish.html index.html );
-$wish =~ s{ \n* \z}{}mxs;
 
 #print( encode_utf8( $html ), "\n" );
 #print( encode_utf8( $wish ), "\n" );
@@ -30,7 +29,11 @@ sub callback {
 
 my $filter = HTML::LinkFilter->new;
 $filter->change( $html, \&callback );
-is_string( encode_utf8( join( q{}, @{ $filter->tags } ) ), encode_utf8( $wish ) );
+
+( my $got = $filter->html ) =~ s{ \s* \z}{}msx;
+$wish =~ s{ \s* \z}{}msx;
+
+is_string( encode_utf8( $got ), encode_utf8( $wish ) );
 
 __DATA__
 @@ wish.html

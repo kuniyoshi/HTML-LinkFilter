@@ -1,12 +1,32 @@
 use Test::More;
-use HTML::LinkFilter;
+BEGIN { $ENV{IS_HTML_LINKFILTER_TESTING} = 1; use HTML::LinkFilter }
 
 my @cases = (
-    [ [ q{<a href="foo/bar">} ], q{<a href="foo/bar">} ],
-    [ [ q{<a href="foo/bar">}, q{</a>} ], q{<a href="foo/bar"></a>} ],
-    [ [ "<p>", "foo", "</p>" ], q{<p>foo</p>} ],
-    [ [ q{<link href="http://foo.forkn.jp/css/member.css" rel="stylesheet" type="text/css" media="screen" />} ], q{<link href="http://foo.forkn.jp/css/member.css" rel="stylesheet" type="text/css" media="screen" />} ],
-    [ [ q{<p>}, q{<a href="/foo">}, "bar", q{</a>}, q{</p>} ], <<'HTML' ],
+    [ <<'WISH', <<'HTML' ],
+<a href="foo/bar">
+WISH
+<a href="foo/bar">
+HTML
+    [ <<'WISH', <<'HTML' ],
+<a href="foo/bar"></a>
+WISH
+<a href="foo/bar"></a>
+HTML
+    [ <<'WISH', <<'HTML' ],
+<p>foo</p>
+WISH
+<p>foo</p>
+HTML
+    [ <<'WISH', <<'HTML' ],
+<link href="http://foo.forkn.jp/css/member.css" rel="stylesheet" type="text/css" media="screen" />
+WISH
+<link href="http://foo.forkn.jp/css/member.css" rel="stylesheet" type="text/css" media="screen" />
+HTML
+    [ <<'WISH', <<'HTML' ],
+<p>
+    <a href="/foo">bar</a>
+</p>
+WISH
 <p>
     <a href="/foo">bar</a>
 </p>
@@ -19,8 +39,9 @@ my $filter = HTML::LinkFilter->new;
 
 foreach my $case_ref ( @cases ) {
     my( $wish, $html ) = @{ $case_ref };
+
     $filter->change( $html );
-    is_deeply( $filter->tags, $wish );
+    is( $filter->html, $wish );
 }
 
 

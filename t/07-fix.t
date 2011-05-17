@@ -1,10 +1,22 @@
 use Test::More;
-use HTML::LinkFilter;
+BEGIN { $ENV{IS_HTML_LINKFILTER_TESTING} = 1; use HTML::LinkFilter }
 
 my @cases = (
-    [ [ q{<a href="baz">} ], q{<a href="foo/bar">} ],
-    [ [ q{<a href="baz">} ], q{<a href="foo/bar">} ],
-    [ [ q{<a href="baz">}, q{foo}, q{</a>} ], q{<a href="foo/bar">foo</a>} ],
+    [ <<'WISH', <<'HTML' ],
+<a href="baz">
+WISH
+<a href="foo/bar">
+HTML
+    [ <<'WISH', <<'HTML' ],
+<a href="baz">
+WISH
+<a href="foo/bar">
+HTML
+    [ <<'WISH', <<'HTML' ],
+<a href="baz">foo</a>
+WISH
+<a href="foo/bar">foo</a>
+HTML
 );
 
 plan tests => scalar @cases;
@@ -19,7 +31,7 @@ foreach my $case_ref ( @cases ) {
     my( $wish, $html ) = @{ $case_ref };
 
     $filter->change( $html, $callback_sub );
-    is_deeply( $filter->tags, $wish );
+    is( $filter->html, $wish );
 }
 
 

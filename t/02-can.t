@@ -4,7 +4,7 @@ my $module  = "HTML::LinkFilter";
 eval "use $module";
 my @methods = qw(
     new
-    change  tags
+    change  tags  html
 );
 
 can_ok( $module, @methods );

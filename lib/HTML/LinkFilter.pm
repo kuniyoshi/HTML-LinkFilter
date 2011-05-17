@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use HTML::Parser;
 
-use constant NO_SORT => ! $ENV{IS_HTML_LINKFILTER_AUTHOR};
+use constant IS_TEST => $ENV{IS_HTML_LINKFILTER_TESTING};
 
 our $VERSION = '0.01';
 
@@ -44,11 +44,6 @@ our %TAGS = ( # Copied from HTML::LinkExtractor 0.13
      '!doctype' => [qw( url )], # is really a process instruction
 );
 
-my $log = do {
-    use Log::Sigil;
-    Log::Sigil->instance;
-};
-
 ### HTML::Parser method, not for __PACKAGE__.
 my $default_h_sub = sub {
     my( $self, $tagname, $original ) = @_;
@@ -61,57 +56,39 @@ my $default_h_sub = sub {
 ### HTML::Parser method, not for __PACKAGE__.
 my $start_h_sub = sub {
     my( $self, $tagname, $attr_ref, $original ) = @_;
-local $, = q{: };
-#$log->warn( "start_h_sub" );
-#$log->warn( "count of tags", scalar @{ $self->{link_filter}{tags} } );
-#$log->dump( "tags", $self->{link_filter}{tags} );
-#$log->warn( "tagname", $tagname );
-#$log->dump( "attr_ref", $attr_ref );
-#$log->warn( "original", $original );
+
     unless ( exists $TAGS{ $tagname } ) {
         push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-#$log->warn( "tag[$tagname] exists." );
-#$log->dump( $attr_ref );
-#$log->warn( "keys: ", join " - ", keys %{ $attr_ref } );
-#$log->warn( "ref: ", ref $attr_ref );
-#$log->warn( "href: ", $attr_ref->{href} );
+
     unless ( grep { my $name = $_; grep { $_ eq $name } @{ $TAGS{ $tagname } } } keys %{ $attr_ref } ) {
         push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-#$log->warn( "attr exists." );
-#$log->dump( $attr_ref );
+
     unless ( $self->{link_filter}{cb} ) {
         push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-#$log->warn( "cb exists." );
+
     foreach my $attr ( keys %{ $attr_ref } ) {
         next
             unless grep { $_ eq $attr } @{ $TAGS{ $tagname } };
-#$log->warn( "attr", $attr );
-#$log->warn( "val", $attr_ref->{ $attr } );
+
         my $new = $self->{link_filter}{cb}->(
             $tagname, $attr, $attr_ref->{ $attr },
         );
 
-#$log->warn( "new", $new );
         $attr_ref->{ $attr } = $new if defined $new;
     }
 
     my $tag = do {
         my $build    = q{};
         my $is_xhtml = grep { $_ eq q{/} } keys %{ $attr_ref };
-#$log->warn( $is_xhtml );
-#$log->warn( "keys", NO_SORT ? keys %{ $attr_ref } : sort keys %{ $attr_ref } );
-#$log->warn( "values", values %{ $attr_ref } );
         my $attr     = join q{ }, map {
-#$log->warn( $_ );
             join q{=}, $_, join q{}, q{"}, $attr_ref->{ $_ }, q{"},
-        } grep { $_ ne q{/} } NO_SORT ? keys %{ $attr_ref } : sort keys %{ $attr_ref };
-#$log->warn( $attr );
+        } grep { $_ ne q{/} } IS_TEST ? keys %{ $attr_ref } : sort keys %{ $attr_ref };
 
         if ( $attr && $is_xhtml ) {
             $build = "<$tagname $attr />";
@@ -133,7 +110,6 @@ local $, = q{: };
         $build;
     };
 
-#$log->warn( "tag: ", $tag );
     push @{ $self->{link_filter}{tags} }, $tag;
 
     return $self;
@@ -169,8 +145,7 @@ sub change {
     $self->_init_tags;
     $self->{cb} = $callback_sub;
     $self->{p}->parse( $html );
-#local $, = q{: };
-#$log->dump("Result", $self->tags);
+    $self->{p}->eof;
 
     return $self;
 }
@@ -183,6 +158,12 @@ sub _init_tags {
 
 sub tags {
     return shift->{tags};
+}
+
+sub html {
+    my $self = shift;
+
+    return join q{}, @{ $self->tags };
 }
 
 1;
@@ -253,6 +234,10 @@ Callback filter can tell 'use original' to parser by returns undef.
 =item tags
 
 Returns some changed HTML tags.
+
+=item html
+
+Returns HTML code which is parsed.
 
 =back
 
