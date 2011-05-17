@@ -2,16 +2,12 @@ use Test::More;
 use HTML::LinkFilter;
 
 my @cases = (
-    [ [ q{<a href="baz">} ], q{<a href="foo/bar">} ],
-    [ [ q{<a href="baz">} ], q{<a href="foo/bar">} ],
-    [ [ q{<a href="baz">}, q{foo}, q{</a>} ], q{<a href="foo/bar">foo</a>} ],
+    [ [ q{<!doctype html>}, q{<html>} ], qq{<!doctype html>\n<html>} ],
 );
 
 plan tests => scalar @cases;
 
-my $callback_sub = sub {
-    return "baz";
-};
+sub callback { }
 
 my $filter = HTML::LinkFilter->new;
 

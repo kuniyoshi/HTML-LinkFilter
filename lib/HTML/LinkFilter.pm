@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use HTML::Parser;
 
+use constant NO_SORT => ! $ENV{IS_HTML_LINKFILTER_AUTHOR};
+
 our $VERSION = '0.01';
 
 ## The html tags which might have URLs
@@ -48,49 +50,68 @@ my $log = do {
 };
 
 ### HTML::Parser method, not for __PACKAGE__.
+my $default_h_sub = sub {
+    my( $self, $tagname, $original ) = @_;
+
+    push @{ $self->{link_filter}{tags} }, $original;
+
+    return;
+};
+
+### HTML::Parser method, not for __PACKAGE__.
 my $start_h_sub = sub {
     my( $self, $tagname, $attr_ref, $original ) = @_;
-$log->warn( "start_h_sub" );
-#$log->warn( $self );
-#$log->warn( $tagname );
-#$log->dump( $attr_ref );
-#$log->warn( $original );
+local $, = q{: };
+#$log->warn( "start_h_sub" );
+#$log->warn( "count of tags", scalar @{ $self->{link_filter}{tags} } );
+#$log->dump( "tags", $self->{link_filter}{tags} );
+#$log->warn( "tagname", $tagname );
+#$log->dump( "attr_ref", $attr_ref );
+#$log->warn( "original", $original );
     unless ( exists $TAGS{ $tagname } ) {
-        push @{ $self->{parent}{tags} }, $original
+        push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-$log->warn( "tag[$tagname] exists." );
-$log->dump( $attr_ref );
+#$log->warn( "tag[$tagname] exists." );
+#$log->dump( $attr_ref );
 #$log->warn( "keys: ", join " - ", keys %{ $attr_ref } );
-$log->warn( "ref: ", ref $attr_ref );
-$log->warn( "href: ", $attr_ref->{href} );
+#$log->warn( "ref: ", ref $attr_ref );
+#$log->warn( "href: ", $attr_ref->{href} );
     unless ( grep { my $name = $_; grep { $_ eq $name } @{ $TAGS{ $tagname } } } keys %{ $attr_ref } ) {
-        push @{ $self->{parent}{tags} }, $original
+        push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-$log->warn( "attr exists." );
-$log->dump( $attr_ref );
-    unless ( $self->{parent}{cb} ) {
-        push @{ $self->{parent}{tags} }, $original
+#$log->warn( "attr exists." );
+#$log->dump( $attr_ref );
+    unless ( $self->{link_filter}{cb} ) {
+        push @{ $self->{link_filter}{tags} }, $original
             and return;
     }
-$log->warn( "cb exists." );
+#$log->warn( "cb exists." );
     foreach my $attr ( keys %{ $attr_ref } ) {
-        my $new = $self->{parent}{cb}->(
-            tagname => $tagname,
-            attr    => $attr,
-            value   => $attr_ref->{ $attr },
+        next
+            unless grep { $_ eq $attr } @{ $TAGS{ $tagname } };
+#$log->warn( "attr", $attr );
+#$log->warn( "val", $attr_ref->{ $attr } );
+        my $new = $self->{link_filter}{cb}->(
+            $tagname, $attr, $attr_ref->{ $attr },
         );
 
+#$log->warn( "new", $new );
         $attr_ref->{ $attr } = $new if defined $new;
     }
 
     my $tag = do {
         my $build    = q{};
         my $is_xhtml = grep { $_ eq q{/} } keys %{ $attr_ref };
+#$log->warn( $is_xhtml );
+#$log->warn( "keys", NO_SORT ? keys %{ $attr_ref } : sort keys %{ $attr_ref } );
+#$log->warn( "values", values %{ $attr_ref } );
         my $attr     = join q{ }, map {
+#$log->warn( $_ );
             join q{=}, $_, join q{}, q{"}, $attr_ref->{ $_ }, q{"},
-        } keys %{ $attr_ref };
+        } grep { $_ ne q{/} } NO_SORT ? keys %{ $attr_ref } : sort keys %{ $attr_ref };
+#$log->warn( $attr );
 
         if ( $attr && $is_xhtml ) {
             $build = "<$tagname $attr />";
@@ -105,21 +126,17 @@ $log->warn( "cb exists." );
             $build = "<$tagname>";
         }
 
+        if ( chomp $original ) {
+            $build .= "\n";
+        }
+
         $build;
     };
 
-    push @{ $self->{parent}{tags} }, $tag;
+#$log->warn( "tag: ", $tag );
+    push @{ $self->{link_filter}{tags} }, $tag;
 
     return $self;
-};
-
-### HTML::Parser method, not for __PACKAGE__.
-my $end_h_sub = sub {
-    my( $self, $tagname, $original ) = @_;
-
-    push @{ $self->{tags} }, $original;
-
-    return;
 };
 
 sub new {
@@ -130,29 +147,37 @@ sub new {
 
     my $p = HTML::Parser->new(
         api_version => 3,
-        start_h    => [
-            $start_h_sub, "self, tagname, attr, text",
+        start_h   => [
+            $start_h_sub,   "self, tagname, attr, text",
         ],
-        end_h      => [
-            $end_h_sub,   "self, tagname, text",
+        default_h => [
+            $default_h_sub, "self, tagname, text",
         ],
     );
 
-    $p->{parent} = $self;
-    $self->{p} = $p;
+    $p->{link_filter} = $self;
+    $self->{p}        = $p;
+    $self->_init_tags;
 
     return $self;
 }
-
 
 sub change {
     my $self = shift;
     my( $html, $callback_sub ) = @_;
 
-    $self->{tags} = [ ];
-    $self->{cb}   = $callback_sub;
+    $self->_init_tags;
+    $self->{cb} = $callback_sub;
     $self->{p}->parse( $html );
+#local $, = q{: };
+#$log->dump("Result", $self->tags);
 
+    return $self;
+}
+
+sub _init_tags {
+    my $self = shift;
+    $self->{tags} = [ ];
     return $self;
 }
 
@@ -180,7 +205,7 @@ HTML::LinkFilter - Changes all links in HTML
   print Dumper $filter->tags;
 
   sub callback {
-      my( $tagname, $attr, $value ) = @_;
+      my( $tagname, $attr_ref, $value ) = @_;
 
       return; # Uses original.
   }
@@ -203,6 +228,33 @@ HTML::LinkFilter can change all links in passed HTML.
 This requires callback sub.  The sub takes tagname, attr, value,
 and returns new value, then it will be replaced. Or uses original
 when returns undef.
+
+*Note* this breaks attributes order in tag.
+*Note* this breaks indents in HTML.  This returns tags.
+
+=head1 METHODS
+
+=over
+
+=item new
+
+Returns instance.
+
+=item change
+
+Changes html to tags by using callback filter.
+Callback filter is an argument which changes link.
+
+Callback filter will take args those are tagname, attr, value,
+and return value is pushed to $self->tags as a new value.
+
+Callback filter can tell 'use original' to parser by returns undef.
+
+=item tags
+
+Returns some changed HTML tags.
+
+=back
 
 =head1 AUTHOR
 

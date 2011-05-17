@@ -3,5 +3,5 @@ use HTML::LinkFilter;
 
 my $filter = HTML::LinkFilter->new;
 
-isa_ok( $filter->{p}{parent}, "HTML::LinkFilter" );
+isa_ok( $filter->{p}{link_filter}, "HTML::LinkFilter" );
 
