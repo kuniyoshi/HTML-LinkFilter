@@ -1,4 +1,7 @@
 Revision history for Perl extension HTML::LinkFilter
 
+0.02    Thu May 18 23:09:00 2011
+        - Fix a bug, which sorts unless testing.
+        - Fix a bug in document.
 0.01    Sat May 14 14:45:59 2011
         - original version
