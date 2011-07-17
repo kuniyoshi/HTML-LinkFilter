@@ -1,6 +1,6 @@
 use Test::More;
 use URI;
-BEGIN { $ENV{IS_HTML_LINKFILTER_TESTING} = 1; use HTML::LinkFilter }
+use HTML::LinkFilter;
 
 my $host = "example.com";
 

@@ -1,12 +1,9 @@
 package HTML::LinkFilter;
-
 use strict;
 use warnings;
 use HTML::Parser;
 
-use constant IS_TEST => $ENV{IS_HTML_LINKFILTER_TESTING};
-
-our $VERSION = '0.02';
+our $VERSION = "0.03";
 
 ## The html tags which might have URLs
 # the master list of tagolas and required attributes (to constitute a link)
@@ -77,7 +74,7 @@ my $start_h_sub = sub {
             unless grep { $_ eq $attr } @{ $TAGS{ $tagname } };
 
         my $new = $self->{link_filter}{cb}->(
-            $tagname, $attr, $attr_ref->{ $attr },
+            $tagname, $attr, $attr_ref->{ $attr }, $attr_ref,
         );
 
         $attr_ref->{ $attr } = $new
@@ -89,7 +86,7 @@ my $start_h_sub = sub {
         my $is_xhtml = grep { $_ eq q{/} } keys %{ $attr_ref };
         my $attr     = join q{ }, map {
             join q{=}, $_, join q{}, q{"}, $attr_ref->{ $_ }, q{"},
-        } grep { $_ ne q{/} } ! IS_TEST ? keys %{ $attr_ref } : sort keys %{ $attr_ref };
+        } grep { $_ ne q{/} } sort keys %{ $attr_ref };
 
         if ( $attr && $is_xhtml ) {
             $build = "<$tagname $attr />";
