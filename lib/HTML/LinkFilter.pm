@@ -1,9 +1,10 @@
 package HTML::LinkFilter;
 use strict;
 use warnings;
+use Scalar::Util qw( weaken );
 use HTML::Parser;
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 
 ## The html tags which might have URLs
 # the master list of tagolas and required attributes (to constitute a link)
@@ -130,6 +131,7 @@ sub new {
     );
 
     $p->{link_filter} = $self;
+    weaken $p->{link_filter};
     $self->{p}        = $p;
     $self->_init_tags;
 

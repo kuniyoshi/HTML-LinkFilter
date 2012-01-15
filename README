@@ -1,27 +1,66 @@
-This is Perl module HTML::LinkFilter.
+NAME
+    HTML::LinkFilter - Changes all links in HTML
 
-INSTALLATION
+SYNOPSIS
+      use HTML::LinkFilter;
+      use Data::Dumper;
 
-HTML::LinkFilter installation is straightforward. If your CPAN shell is set up,
-you should just be able to do
+      my $html = do { local $/; <DATA> };
 
-    % cpan HTML::LinkFilter
+      my $filter = HTML::LinkFilter->new;
+      $filter->change( \$html, \&callback );
 
-Download it, unpack it, then build it as per the usual:
+      print Dumper $filter->tags;
 
-    % perl Makefile.PL
-    % make && make test
+      sub callback {
+          my( $tagname, $attr, $value ) = @_;
 
-Then install it:
+          return; # Uses original.
+      }
 
-    % make install
+      __DATA__
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+        </head>
+        <body>
+          <h1><a href="/">example.com</a></h1>
+        </body>
+      </html>
 
-DOCUMENTATION
+DESCRIPTION
+    HTML::LinkFilter can change all links in passed HTML.
 
-HTML::LinkFilter documentation is available as in POD. So you can do:
+    This requires callback sub. The sub takes tagname, attr, value, and
+    returns new value, then it will be replaced. Or uses original when
+    returns undef.
 
-    % perldoc HTML::LinkFilter
+    *Note* this breaks attributes order in tag.
 
-to read the documentation online with your favorite pager.
+METHODS
+    new Returns instance.
 
-kuniyoshi kouji
+    change
+        Changes html to tags by using callback filter. Callback filter is an
+        argument which changes link.
+
+        Callback filter will take args those are tagname, attr, value, and
+        return value is pushed to $self->tags as a new value.
+
+        Callback filter can tell 'use original' to parser by returns undef.
+
+    tags
+        Returns some changed HTML tags.
+
+    html
+        Returns HTML code which is parsed.
+
+AUTHOR
+    kuniyoshi kouji <kuniyoshi@cpan.org>
+
+SEE ALSO
+LICENSE
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
