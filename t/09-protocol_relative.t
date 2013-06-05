@@ -18,12 +18,12 @@ HTML
     [ <<"WISH", <<'HTML' ],
 <link href="//$host/css/styles.css" media="screen" rel="stylesheet" type="text/css" />
 WISH
-<link href="/css/styles.css" rel="stylesheet" type="text/css" media="screen" />
+<link href="/css/styles.css" media="screen" rel="stylesheet" type="text/css" />
 HTML
     [ <<"WISH", <<'HTML' ],
 <link href="//$host/css/member.css" media="screen" rel="stylesheet" type="text/css" />
 WISH
-<link href="/css/member.css" rel="stylesheet" type="text/css" media="screen" />
+<link href="/css/member.css" media="screen" rel="stylesheet" type="text/css" />
 HTML
 );
 

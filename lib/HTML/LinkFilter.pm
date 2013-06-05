@@ -4,7 +4,7 @@ use warnings;
 use Scalar::Util qw( weaken );
 use HTML::Parser;
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 
 ## The html tags which might have URLs
 # the master list of tagolas and required attributes (to constitute a link)
@@ -53,7 +53,7 @@ my $default_h_sub = sub {
 
 ### HTML::Parser method, not for __PACKAGE__.
 my $start_h_sub = sub {
-    my( $self, $tagname, $attr_ref, $original ) = @_;
+    my( $self, $tagname, $attr_ref, $attr_seq_ref, $original ) = @_;
 
     unless ( exists $TAGS{ $tagname } ) {
         push @{ $self->{link_filter}{tags} }, $original
@@ -87,7 +87,7 @@ my $start_h_sub = sub {
         my $is_xhtml = grep { $_ eq q{/} } keys %{ $attr_ref };
         my $attr     = join q{ }, map {
             join q{=}, $_, join q{}, q{"}, $attr_ref->{ $_ }, q{"},
-        } grep { $_ ne q{/} } sort keys %{ $attr_ref };
+        } grep { $_ ne q{/} } @{ $attr_seq_ref };
 
         if ( $attr && $is_xhtml ) {
             $build = "<$tagname $attr />";
@@ -123,7 +123,7 @@ sub new {
     my $p = HTML::Parser->new(
         api_version => 3,
         start_h   => [
-            $start_h_sub,   "self, tagname, attr, text",
+            $start_h_sub,   "self, tagname, attr, attrseq, text",
         ],
         default_h => [
             $default_h_sub, "self, tagname, text",

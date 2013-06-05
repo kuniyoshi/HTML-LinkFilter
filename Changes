@@ -1,5 +1,8 @@
 Revision history for Perl extension HTML::LinkFilter
 
+0.05    Thu Jun  6 01:12:52 JST 2013
+        - Fix SYNOPSIS; change do not take scalar ref, it takes scalar.
+        - use attrseq of HTML::Parser for keeping sequence of attributes.
 0.04    Sun Jan 15 16:14:27 2012
         - Fix memory reak.
 0.03    Sun Jul 17  4:19:12 2011
