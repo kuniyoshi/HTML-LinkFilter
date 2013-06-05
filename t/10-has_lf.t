@@ -20,7 +20,7 @@ my $filter = HTML::LinkFilter->new;
 foreach my $case_ref ( @cases ) {
     my( $wish, $html ) = @{ $case_ref };
 
-    $filter->change( $html, \&callback_sub );
+    $filter->change( $html, \&callback );
     is( $filter->html, $wish );
 }
 
