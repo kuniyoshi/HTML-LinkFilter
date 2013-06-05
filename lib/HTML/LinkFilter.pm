@@ -181,7 +181,7 @@ HTML::LinkFilter - Changes all links in HTML
   my $html = do { local $/; <DATA> };
 
   my $filter = HTML::LinkFilter->new;
-  $filter->change( \$html, \&callback );
+  $filter->change( $html, \&callback );
 
   print Dumper $filter->tags;
 
