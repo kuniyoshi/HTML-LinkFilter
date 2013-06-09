@@ -4,7 +4,7 @@ use warnings;
 use Scalar::Util qw( weaken );
 use HTML::Parser;
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 
 ## The html tags which might have URLs
 # the master list of tagolas and required attributes (to constitute a link)
@@ -70,6 +70,8 @@ my $start_h_sub = sub {
             and return;
     }
 
+    my $did_change;
+
     foreach my $attr ( keys %{ $attr_ref } ) {
         next
             unless grep { $_ eq $attr } @{ $TAGS{ $tagname } };
@@ -78,8 +80,15 @@ my $start_h_sub = sub {
             $tagname, $attr, $attr_ref->{ $attr }, $attr_ref,
         );
 
-        $attr_ref->{ $attr } = $new
-            if defined $new;
+        if ( defined $new ) {
+            $attr_ref->{ $attr } = $new;
+            $did_change++;
+        }
+    }
+
+    unless ( $did_change ) {
+        push @{ $self->{link_filter}{tags} }, $original
+            and return;
     }
 
     my $tag = do {

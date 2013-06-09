@@ -1,4 +1,4 @@
 use Test::More tests => 1;
 
-BEGIN { use_ok 'HTML::LinkFilter', 0.05 }
+BEGIN { use_ok 'HTML::LinkFilter', 0.06 }
 
